@@ -1,0 +1,5 @@
+---
+# vars file for pi_role
+
+unbound_daemon: unbound
+

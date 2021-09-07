@@ -1,0 +1,49 @@
+---
+- name: Install Unbound.
+  apt:
+    name: unbound
+    update_cache: yes
+  
+- name: Copying configuration file.
+  template: 
+    src: ./pi-hole.j2
+    dest: /etc/unbound/unbound.conf.d/pi-hole.conf
+
+- name: Restarting Unbound.
+  service:
+    name: "{{ unbound_daemon  }}"
+    state: restarted
+    enabled: true
+
+- name: Installing PiHole.
+  shell: curl -sSL https://install.pi-hole.net | bash
+
+- name: Allow port 53 (DNS) UDP only from RFC1918 networks.
+  iptables:
+    chain: INPUT
+    protocol: udp
+    destination_port: 53
+    source: "{{ item }}"
+    jump: ACCEPT
+  loop:
+    - 192.168.0.0/16
+    - 172.16.0.0/12
+    - 10.0.0.0/8
+    - 169.254.0.0/16
+
+- name: Allow port 80 (HTTP) TCP only from RFC1918 networks.
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: 80
+    source: "{{ item }}"
+    jump: ACCEPT
+  loop:
+    - 192.168.0.0/16
+    - 172.16.0.0/12
+    - 10.0.0.0/8
+    - 169.254.0.0/16
+  
+- name: Save Firewall rules.
+  shell: iptables-save > /etc/iptables/rules.v4
+
